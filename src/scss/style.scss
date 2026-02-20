@@ -1,0 +1,19 @@
+@use "base/null";
+@use "common";
+@use "./base/mixins";
+@use "base/fsdf";
+
+// Якщо є локальні шрифти
+// @font-face {
+//     font-family: "Daneehand";
+//     src: url("../fonts/DaneehandReg.woff2") format("woff2"),
+//     url("../fonts/DaneehandReg.woff") format("woff");
+//     font-weight: normal;
+//     font-style: normal;
+//     font-display: swap;
+// }
+
+// @include mixins.fonts(Daneehand,DaneehandReg,500, normal);
+// @include mixins.fonts(minecraft-ten,minecraft-ten-font-cyrillic,500, cyrillic);
+
+// @include mixins.image-set("../img/products/02.png", 0);
