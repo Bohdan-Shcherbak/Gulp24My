@@ -32,7 +32,7 @@ export function html(){
         app.isBuild,
         htmlReplace({
             'css':'./css/style.min.css',
-            'js':'../js/app.min.js'
+            'js':'./js/app.min.js'
       })))
     .pipe(
         app.plugins.ifPlugin(
