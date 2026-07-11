@@ -1,7 +1,17 @@
+@use "sass:math";
 @use "base/null";
+// Підключення стилів загальних елементів проекту
 @use "common";
 @use "./base/mixins";
-@use "base/fsdf";
+@use "base/variables" as *;
+@use "base/_functions" as *;
+
+// Підключення стилів окремих блоків
+@use "header";
+@use "footer";
+
+// Підключення стилів окремих сторінок
+@use "home";
 
 // Якщо є локальні шрифти
 // @font-face {
@@ -17,3 +27,72 @@
 // @include mixins.fonts(minecraft-ten,minecraft-ten-font-cyrillic,500, cyrillic);
 
 // @include mixins.image-set("../img/products/02.png", 0);
+
+body{
+
+	// Скролл заблоковано
+	.lock & {
+			position: relative;
+			overflow: hidden;
+			touch-action: none;
+			overscroll-behavior: none;
+
+			&::after{
+				position: absolute;
+				content: '';
+				top: 0;
+				left: 0;
+				display: flex;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0, 0, 0, 0.5);
+				z-index: 10;
+				transition: all 0.5s ease;
+				backdrop-filter: blur(2px)
+			}
+		}
+
+	// Сайт завантажений
+	.loaded & {}
+}
+
+.wrapper {
+	position: relative;
+	min-height: 100%;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	margin: 0 auto;
+
+
+	@supports (overflow: clip) {
+		overflow: clip;
+	}
+
+	// Притискаємо footer
+	>main {
+		flex: 1 1 auto;
+	}
+
+	// Фікс для слайдерів
+	>* {
+		min-width: 0;
+	}
+}
+
+.page{
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+}
+
+.picture{
+	display: block;
+
+	& img{
+		object-fit:cover;
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+}

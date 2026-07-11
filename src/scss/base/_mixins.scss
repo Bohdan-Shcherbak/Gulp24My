@@ -1,43 +1,164 @@
 @use "sass:string";
+@use "sass:math";
+@use "variables" as *;
+@use "_functions" as *;
 
 @mixin image-set($file, $switch: 1) {
-     $rr:"../";
-     $path: string.index($file, "/");
-     $withoutPath: string.slice($file, $path + 1);
-     $dot: string.index(#{$withoutPath}, ".");
-     $nameWithoutPath: string.slice(#{$withoutPath}, 1, $dot - 1);
-     $name: #{$rr} +  #{$nameWithoutPath};
-     $ext: string.slice(#{$withoutPath}, $dot + 1);
-     @if $switch == 0 {
-          background-image: url("#{$file}") type("image/#{$ext}");
-          background-image: image-set(
-               url("#{$name}.avif") type("image/avif"),
-               url("#{$name}.webp") type("image/webp"),
-               url("#{$file}") type("image/#{$ext}")
-          );
-     } @else if $switch == 1 {
-          background-image: url("#{$file}") type("image/#{$ext}");
-          background-image: image-set(
-               url("#{$name}@1x.avif") type("image/avif") 1x,
-               url("#{$name}@2x.avif") type("image/avif") 2x,
-               url("#{$name}@3x.avif") type("image/avif") 3x,
-               url("#{$name}@1x.webp") type("image/webp") 1x,
-               url("#{$name}@2x.webp") type("image/webp") 2x,
-               url("#{$name}@3x.webp") type("image/webp") 3x,
-          );
-     }
-     background-position: top;
-     background-repeat: no-repeat;
-     background-size: 100%; 
+	$rr:"../";
+	$path: string.index($file, "/");
+	$withoutPath: string.slice($file, $path + 1);
+	$dot: string.index(#{$withoutPath}, ".");
+	$nameWithoutPath: string.slice(#{$withoutPath}, 1, $dot - 1);
+	$name: #{$rr} +  #{$nameWithoutPath};
+	$ext: string.slice(#{$withoutPath}, $dot + 1);
+	@if $switch == 0 {
+		background-image: url("#{$file}") type("image/#{$ext}");
+		background-image: image-set(
+			url("#{$name}.avif") type("image/avif"),
+			url("#{$name}.webp") type("image/webp"),
+			url("#{$file}") type("image/#{$ext}")
+		);
+	} @else if $switch == 1 {
+		background-image: url("#{$file}") type("image/#{$ext}");
+		background-image: image-set(
+			url("#{$name}@1x.avif") type("image/avif") 1x,
+			url("#{$name}@2x.avif") type("image/avif") 2x,
+			url("#{$name}@3x.avif") type("image/avif") 3x,
+			url("#{$name}@1x.webp") type("image/webp") 1x,
+			url("#{$name}@2x.webp") type("image/webp") 2x,
+			url("#{$name}@3x.webp") type("image/webp") 3x,
+		);
+	}
+	background-position: top;
+	background-repeat: no-repeat;
+	background-size: 100%; 
 }
 
 @mixin fonts($name, $file, $weight: 400, $style: normal) {
-     @font-face {
-       font-family: $name;
-       src: url("../fonts/#{$file}.woff2") format("woff2"),
-            url("../fonts/#{$file}.woff") format("woff");
-       font-weight: $weight;
-       font-style: $style;
-       font-display: swap;
-     }
-   }
+	@font-face {
+		font-family: $name;
+		src: url("../fonts/#{$file}.woff2") format("woff2"),
+			url("../fonts/#{$file}.woff") format("woff");
+		font-weight: $weight;
+		font-style: $style;
+		font-display: swap;
+	}
+}
+
+
+@mixin adaptiveValue1($property, $startSize, $minSize, $keepSize: 0, $widthFrom: $containerWidth, $widthTo: $minWidth) {
+	@if ($startSize==0) {
+		$startSize: 0.000001;
+	}
+	@if ($minSize==0) {
+		$minSize: 0.000001;
+	}
+
+	// Для calc();
+	$addSize: math.div($startSize - $minSize, 16);
+
+	@if ($widthFrom == $containerWidth and $maxWidthContainer == 0) {
+		$widthFrom: $maxWidth;
+	}
+
+	// Брейк-поїнти в EM
+	$widthFromMedia: em($widthFrom);
+	$widthToMedia: em($widthTo);
+
+	// Формула плаваючого значення
+	// Источник: https://css-tricks.com/linearly-scale-font-size-with-css-clamp-based-on-the-viewport/
+	$slope: math.div(($startSize - $minSize), ($widthFrom - $widthTo));
+	$yIntersection: -$widthTo * $slope + $minSize;
+	@if ($yIntersection==0) {
+		$yIntersection: 0.000001;
+	}
+	$flyValue: #{rem($yIntersection)}" + " #{$slope * 100}vw;
+
+	// Отримання значення властивості
+	$propertyValue: #{"clamp(" rem($minSize) "," $flyValue "," rem($startSize) ")"};
+	// Якщо негативні значення
+	@if ($minSize > $startSize) {
+		$propertyValue: #{"clamp(" rem($startSize) "," $flyValue "," rem($minSize) ")"};
+	}
+
+	// Встановлюємо значення за замовчуванням
+	@if $keepSize != 1 and $keepSize != 3 {
+		@media (min-width: $widthFromMedia) {
+			#{$property}: rem($startSize);
+		}
+	}
+	// Адаптуємо розмір у проміжку між зазначеними ширинами в'юпорту
+	@media (min-width: $widthToMedia) and (max-width: $widthFromMedia) {
+		// Якщо підтримується clamp();
+		@supports (#{$property}: $propertyValue) {
+			#{$property}: $propertyValue;
+		}
+		// Якщо не підтримується clamp();
+		@supports not (#{$property}: $propertyValue) {
+			#{$property}: calc(#{rem($minSize)} + #{$addSize} * (100vw - #{rem($widthTo)}) / #{math.div($widthFrom, 16) - math.div($widthTo, 16)});
+		}
+	}
+	@if $keepSize != 1 and $keepSize != 2 {
+		@media (max-width: $widthToMedia) {
+			#{$property}: rem($minSize);
+		}
+	}
+}
+@mixin adaptiveValue($property, $startSize, $minSize, $keepSize: 0, $widthFrom: $containerWidth, $widthTo: $minWidth) {
+	@if ($startSize==0) {
+		$startSize: 0.000001;
+	}
+	@if ($minSize==0) {
+		$minSize: 0.000001;
+	}
+
+	// Для calc();
+	$addSize: math.div($startSize - $minSize, 16);
+
+	@if ($widthFrom == $containerWidth and $maxWidthContainer == 0) {
+		$widthFrom: $maxWidth;
+	}
+
+	// Брейк-поїнти в EM
+	$widthFromMedia: em($widthFrom);
+	$widthToMedia: em($widthTo);
+
+	// Формула плаваючого значення
+	// Источник: https://css-tricks.com/linearly-scale-font-size-with-css-clamp-based-on-the-viewport/
+	$slope: math.div(($startSize - $minSize), ($widthFrom - $widthTo));
+	$yIntersection: -$widthTo * $slope + $minSize;
+	@if ($yIntersection==0) {
+		$yIntersection: 0.000001;
+	}
+	$flyValue: #{rem($yIntersection)}" + " #{$slope * 100}vw;
+
+	// Отримання значення властивості
+	$propertyValue: #{"clamp(" rem($minSize) "," $flyValue "," rem($startSize) ")"};
+	// Якщо негативні значення
+	@if ($minSize > $startSize) {
+		$propertyValue: #{"clamp(" rem($startSize) "," $flyValue "," rem($minSize) ")"};
+	}
+
+	// Встановлюємо значення за замовчуванням
+	@if $keepSize != 1 and $keepSize != 3 {
+		@media (min-width: $widthFromMedia) {
+			#{$property}: rem($startSize);
+		}
+	}
+	// Адаптуємо розмір у проміжку між зазначеними ширинами в'юпорту
+	@media (min-width: $widthToMedia) and (max-width: $widthFromMedia) {
+		// Якщо підтримується clamp();
+		@supports (#{$property}: $propertyValue) {
+			#{$property}: $propertyValue;
+		}
+		// Якщо не підтримується clamp();
+		@supports not (#{$property}: $propertyValue) {
+			#{$property}: calc(#{rem($minSize)} + #{$addSize} * (100vw - #{rem($widthTo)}) / #{math.div($widthFrom, 16) - math.div($widthTo, 16)});
+		}
+	}
+	@if $keepSize != 1 and $keepSize != 2 {
+		@media (max-width: $widthToMedia) {
+			#{$property}: rem($minSize);
+		}
+	}
+}

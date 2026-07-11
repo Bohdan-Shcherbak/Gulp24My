@@ -1,0 +1,12 @@
+@use "sass:math";
+@use  "base/_mixins" as *;
+@use "base/variables" as *;
+@use "base/null";
+@use "base/_functions" as *;
+
+// Підключення стилів загальних елементів проекту
+@use "common";
+
+
+// Підключення стилів окремих сторінок
+@use "home";
